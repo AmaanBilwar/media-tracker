@@ -161,7 +161,7 @@ export default function MoviesPage() {
                 <Button
                   onClick={loadMore}
                   disabled={isLoading || isSearching}
-                  className="bg-red-600 hover:bg-red-700"
+                  className="bg-black text-white hover:bg-gray-700 hover:text-white hover:cursor-pointer"
                 >
                   {isLoading || isSearching ? (
                     <span className="flex items-center">

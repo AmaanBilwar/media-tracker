@@ -198,7 +198,7 @@ export default function ShowsPage() {
             </div>
             
             {/* Load more button */}
-            {((searchQuery && hasMoreSearchResults) || (!searchQuery && hasMore)) && (
+            {(hasMore || hasMoreSearchResults) && (
               <div className="mt-8 flex justify-center">
                 <button
                   onClick={loadMore}

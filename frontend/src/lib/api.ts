@@ -18,6 +18,18 @@ export interface Show {
   type: string;
 }
 
+export interface Anime {
+  id: string;
+  title: string;
+  posterUrl: string;
+  rating: number;
+  year: string;
+  summary?: string;
+  genres?: string[];
+  status?: string;
+  type: string;
+}
+
 export interface Movie {
   id: string;
   title: string;
@@ -41,13 +53,22 @@ export type WatchStatus = 'currently_watching' | 'watch_later' | 'watched' | 're
 export interface WatchStatusData {
   userId: string;
   contentId: string;
-  contentType: 'movie' | 'show';
+  contentType: 'movie' | 'show' | 'anime';
   status: WatchStatus;
+  lastSeason?: number;
+  lastEpisode?: number;
+}
+
+export interface WatchStatusResponse {
+  status: WatchStatus;
+  lastSeason?: number;
+  lastEpisode?: number;
 }
 
 export interface ContentByStatus {
   movies: Record<WatchStatus, Movie[]>;
   shows: Record<WatchStatus, Show[]>;
+  anime: Record<WatchStatus, Anime[]>;
 }
 
 export const getCurrentUserId = async (): Promise<string | null> => {
@@ -163,16 +184,63 @@ export async function getShowById(id: string): Promise<Show | null> {
   }
 }
 
+export async function searchAnime(query: string): Promise<Anime[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/anime/search?q=${encodeURIComponent(query)}`);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.results || [];
+  } catch (error) {
+    console.error('Error searching anime:', error);
+    return [];
+  }
+}
+
+export async function getAnimeById(id: string): Promise<Anime | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/anime/${id}`);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching anime details:', error);
+    return null;
+  }
+}
+
+export async function getPopularAnime(): Promise<Anime[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/anime/popular`);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.results || [];
+  } catch (error) {
+    console.error('Error fetching popular anime:', error);
+    return [];
+  }
+}
+
 // Watch status functions
 
-export const getWatchStatus = async (contentId: string, contentType: 'movie' | 'show'): Promise<WatchStatus> => {
+export const getWatchStatus = async (contentId: string, contentType: 'movie' | 'show' | 'anime'): Promise<WatchStatusResponse> => {
   try {
     const userId = await getCurrentUserId();
     
     // Check if we have a valid userId before making the request
     if (!userId) {
       console.error('No user ID available for watch status request');
-      return 'none';
+      return { status: 'none', lastSeason: undefined, lastEpisode: undefined };
     }
     
     const response = await fetch(`${API_BASE_URL}/users/${userId}/watch-status/${contentType}/${contentId}`, {
@@ -180,26 +248,31 @@ export const getWatchStatus = async (contentId: string, contentType: 'movie' | '
       headers: {
         'Content-Type': 'application/json',
       },
-      // Remove credentials to avoid CORS issues
     });
     
     if (!response.ok) {
       console.error(`Failed to fetch watch status: ${response.status} ${response.statusText}`);
-      return 'none';
+      return { status: 'none', lastSeason: undefined, lastEpisode: undefined };
     }
     
     const data = await response.json();
-    return data.status || 'none';
+    return {
+      status: data.status || 'none',
+      lastSeason: data.lastSeason,
+      lastEpisode: data.lastEpisode
+    };
   } catch (error) {
     console.error('Error fetching watch status:', error);
-    return 'none';
+    return { status: 'none', lastSeason: undefined, lastEpisode: undefined };
   }
 };
 
 export const updateWatchStatus = async (
   contentId: string,
-  contentType: 'movie' | 'show',
-  status: WatchStatus
+  contentType: 'movie' | 'show' | 'anime',
+  status: WatchStatus,
+  lastSeason?: number,
+  lastEpisode?: number
 ): Promise<boolean> => {
   try {
     const userId = await getCurrentUserId();
@@ -210,13 +283,18 @@ export const updateWatchStatus = async (
       return false;
     }
     
+    const body: any = { status };
+    if (contentType === 'show') {
+      if (lastSeason !== undefined) body.lastSeason = lastSeason;
+      if (lastEpisode !== undefined) body.lastEpisode = lastEpisode;
+    }
+    
     const response = await fetch(`${API_BASE_URL}/users/${userId}/watch-status/${contentType}/${contentId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      // Remove credentials to avoid CORS issues
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(body),
     });
     
     if (!response.ok) {
@@ -233,7 +311,7 @@ export const updateWatchStatus = async (
 
 export async function getBatchWatchStatus(
   contentIds: string[], 
-  contentType: 'movie' | 'show'
+  contentType: 'movie' | 'show' | 'anime'
 ): Promise<Record<string, WatchStatus>> {
   try {
     const userId = await getCurrentUserId();
@@ -281,34 +359,26 @@ export async function getBatchWatchStatus(
   }
 }
 
-export async function getContentByStatus(contentType: 'movie' | 'show', status: WatchStatus): Promise<(Movie | Show)[]> {
+export async function getContentByStatus(contentType: 'movie' | 'show' | 'anime', status: WatchStatus): Promise<(Movie | Show | Anime)[]> {
   try {
     const userId = await getCurrentUserId();
     
     if (!userId) {
-      console.error('No user ID available for fetching content by status');
+      console.error('No user ID available for content by status request');
       return [];
     }
     
-    console.log(`Fetching ${contentType}s with status '${status}' for user ${userId}`);
-    
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/watch-status/${contentType}?status=${status}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(`${API_BASE_URL}/users/${userId}/watch-status/${contentType}?status=${status}`);
     
     if (!response.ok) {
-      console.error(`Failed to fetch ${contentType}s by status: ${response.status} ${response.statusText}`);
+      console.error(`Failed to fetch content by status: ${response.status} ${response.statusText}`);
       return [];
     }
     
     const data = await response.json();
-    console.log(`Received ${data[`${contentType}s`]?.length || 0} ${contentType}s for status '${status}'`);
     return data[`${contentType}s`] || [];
   } catch (error) {
-    console.error(`Error fetching ${contentType}s by status:`, error);
+    console.error('Error fetching content by status:', error);
     return [];
   }
 }
@@ -328,6 +398,13 @@ export async function getAllContentByStatus(): Promise<ContentByStatus> {
           none: []
         },
         shows: {
+          currently_watching: [],
+          watch_later: [],
+          watched: [],
+          rewatch: [],
+          none: []
+        },
+        anime: {
           currently_watching: [],
           watch_later: [],
           watched: [],
@@ -377,4 +454,8 @@ export async function getShowsByStatus(status: WatchStatus): Promise<Show[]> {
     console.error('Error fetching shows by status:', error);
     return [];
   }
+}
+
+export async function getAnimeByStatus(status: WatchStatus): Promise<Anime[]> {
+  return getContentByStatus('anime', status) as Promise<Anime[]>;
 } 

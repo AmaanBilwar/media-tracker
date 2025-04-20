@@ -1,13 +1,40 @@
+"use client"
+
 import Link from "next/link"
 import { ArrowRight, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import LoginForm from "@/components/login-form"
+import { useTheme } from "next-themes"
+import { useState, useEffect } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
+function ThemeLogo() {
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <div className="h-32 w-[350px] mb-6" /> // Placeholder with same dimensions
+    )
+  }
+
+  return (
+    <img
+      src={resolvedTheme === 'dark' ? '/logo-white.png' : '/logo.png'}
+      alt="Media Tracker Logo"
+      className="h-32 w-[350px] object-contain mb-6"
+    />
+  )
+}
 
 export default function LandingPage() {
   return (
@@ -17,7 +44,7 @@ export default function LandingPage() {
         <div className="w-full md:w-1/2 flex flex-col justify-center px-6 py-12 md:px-12 lg:px-20">
           <div className="max-w-md mx-auto md:mx-0 space-y-8">
             <div className="space-y-2">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">Amaan's Media Tracker</h1>
+              <ThemeLogo />
               <p className="text-xl text-gray-600 mt-4">
                 Track, discover, and organize your favorite movies and shows in one place.
               </p>

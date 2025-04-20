@@ -37,8 +37,8 @@ export function WatchStatusDropdown({
 
   useEffect(() => {
     const fetchStatus = async () => {
-      const currentStatus = await getWatchStatus(contentId, contentType)
-      setStatus(currentStatus)
+      const response = await getWatchStatus(contentId, contentType)
+      setStatus(response.status)
     }
     
     fetchStatus()
@@ -94,31 +94,49 @@ export function WatchStatusDropdown({
         <Button 
           variant="outline" 
           size="sm" 
-          className={`w-full ${className}`}
+          className={`w-full bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white ${className}`}
           disabled={isLoading}
         >
           {getStatusIcon(status)}
           {getStatusLabel(status)}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => handleStatusChange('currently_watching')}>
+      <DropdownMenuContent 
+        align="end"
+        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md"
+      >
+        <DropdownMenuItem 
+          onClick={() => handleStatusChange('currently_watching')}
+          className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-white"
+        >
           <PlayCircle className="h-4 w-4 mr-2" />
           Currently Watching
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusChange('watch_later')}>
+        <DropdownMenuItem 
+          onClick={() => handleStatusChange('watch_later')}
+          className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-white"
+        >
           <Clock className="h-4 w-4 mr-2" />
           Watch Later
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusChange('watched')}>
+        <DropdownMenuItem 
+          onClick={() => handleStatusChange('watched')}
+          className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-white"
+        >
           <CheckCircle className="h-4 w-4 mr-2" />
           Watched
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusChange('rewatch')}>
+        <DropdownMenuItem 
+          onClick={() => handleStatusChange('rewatch')}
+          className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-white"
+        >
           <RefreshCw className="h-4 w-4 mr-2" />
           Rewatch
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusChange('none')}>
+        <DropdownMenuItem 
+          onClick={() => handleStatusChange('none')}
+          className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-white"
+        >
           <MoreHorizontal className="h-4 w-4 mr-2" />
           Clear Status
         </DropdownMenuItem>
