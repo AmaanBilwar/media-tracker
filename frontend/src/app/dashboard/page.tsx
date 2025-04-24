@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
-import MovieGrid from "@/components/movie-grid"
+import ContentGrid from "@/components/content-grid"
 import { MovieSection } from "@/components/movie-section"
 import { getAllContentByStatus, Movie, Show, Anime, WatchStatus, ContentByStatus } from "@/lib/api"
 import { Loader2 } from "lucide-react"
@@ -20,7 +20,7 @@ export default function DashboardPage() {
     {
       revalidateOnFocus: true,
       revalidateOnReconnect: true,
-      dedupingInterval: 0, // Remove deduping to ensure immediate updates
+      dedupingInterval: 0,
       refreshInterval: 0,
       revalidateIfStale: true,
       onSuccess: () => setIsMutating(false),
@@ -65,7 +65,7 @@ export default function DashboardPage() {
             <Loader2 className="h-6 w-6 animate-spin text-red-500" />
           </div>
         ) : (
-          <MovieGrid movies={[...movies, ...shows, ...anime]} />
+          <ContentGrid content={[...movies, ...shows, ...anime]} />
         )}
       </MovieSection>
     )

@@ -9,7 +9,7 @@ interface MovieCardProps {
   posterUrl: string
   rating: number
   year: string
-  type?: 'movie' | 'show'
+  type?: 'movie' | 'show' | 'anime'
 }
 
 export default function MovieCard({ id, title, posterUrl, rating, year, type = "movie" }: MovieCardProps) {
@@ -17,7 +17,7 @@ export default function MovieCard({ id, title, posterUrl, rating, year, type = "
 
   useEffect(() => {
     const fetchWatchInfo = async () => {
-      if (type === 'show') {
+      if (type === 'show' || type === 'anime') {
         try {
           const status = await getWatchStatus(id, type)
           if (status.lastSeason && status.lastEpisode) {
@@ -64,6 +64,11 @@ export default function MovieCard({ id, title, posterUrl, rating, year, type = "
       <div className="mt-2">
         <h3 className="font-medium text-sm truncate">{title}</h3>
         {year && <p className="text-xs text-gray-400">{year}</p>}
+        {watchInfo && (
+          <p className="text-xs text-gray-400">
+            S{watchInfo.lastSeason}E{watchInfo.lastEpisode}
+          </p>
+        )}
       </div>
     </div>
   )

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { getWatchStatus, updateWatchStatus, WatchStatus } from '@/lib/api';
+import { getWatchStatus, updateWatchStatus, WatchStatus, WatchStatusResponse } from '@/lib/api';
 
 interface WatchStatusDropdownProps {
   contentId: string;
-  contentType: 'movie' | 'show';
+  contentType: 'movie' | 'show' | 'anime';
 }
 
 export const WatchStatusDropdown: React.FC<WatchStatusDropdownProps> = ({ contentId, contentType }) => {
@@ -20,11 +20,10 @@ export const WatchStatusDropdown: React.FC<WatchStatusDropdownProps> = ({ conten
         setError(null);
         try {
           const currentStatus = await getWatchStatus(contentId, contentType);
-          setStatus(currentStatus);
+          setStatus(currentStatus.status);
         } catch (error) {
           console.error('Error fetching watch status:', error);
           setError('Failed to load watch status');
-          // Set a default status to prevent UI issues
           setStatus('none');
         } finally {
           setIsLoading(false);

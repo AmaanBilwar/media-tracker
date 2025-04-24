@@ -1,13 +1,10 @@
-import MovieGrid from "@/components/movie-grid"
-import Navbar from "@/components/navbar"
+import ContentGrid from "@/components/content-grid"
+import { MovieSection } from "@/components/movie-section"
 
-export default function Home() {
+export default function ShowsLoading() {
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Navbar />
-      <main className="container mx-auto px-4 py-6">
-        <MovieGrid movies={[]} />
-      </main>
-    </div>
+    <MovieSection title="Loading...">
+      <ContentGrid content={[]} />
+    </MovieSection>
   )
 }
