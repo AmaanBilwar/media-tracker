@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getPopularAnime } from '@/lib/api'
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -25,4 +25,4 @@ export async function GET(
       { status: 500 }
     )
   }
-} 
+}
