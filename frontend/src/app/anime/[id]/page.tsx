@@ -2,142 +2,181 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { Anime, getAnimeById } from "@/lib/api"
-import { Loader2, Star, Calendar, Tag, Info } from "lucide-react"
+import DashboardLayout from "@/components/dashboard-layout"
+import { Anime, getAnimeDetails } from "@/lib/api"
 import Image from "next/image"
-import Link from "next/link"
+import { Loader2, Calendar, Star, Tv, Clock, Users } from "lucide-react"
+import { WatchStatusDropdown } from "@/components/watch-status-dropdown"
 
 export default function AnimeDetailsPage() {
   const params = useParams()
-  const id = params.id as string
+  const animeId = params.id as string
   const [anime, setAnime] = useState<Anime | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchAnimeDetails = async () => {
-      if (!id) return
-      
-      setIsLoading(true)
-      setError(null)
-      
       try {
-        const data = await getAnimeById(id)
-        setAnime(data)
+        const animeDetails = await getAnimeDetails(animeId)
+        setAnime(animeDetails)
       } catch (err) {
         console.error('Error fetching anime details:', err)
-        setError('Failed to load anime details. Please try again.')
+        setError('Failed to load anime details. Please try again later.')
       } finally {
         setIsLoading(false)
       }
     }
-    
+
     fetchAnimeDetails()
-  }, [id])
+  }, [animeId])
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-red-500" />
-      </div>
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </DashboardLayout>
     )
   }
 
-  if (error) {
+  if (error || !anime) {
     return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-        {error}
-      </div>
-    )
-  }
-
-  if (!anime) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-lg text-gray-500">Anime not found</p>
-      </div>
+      <DashboardLayout>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error || 'Anime not found'}
+        </div>
+      </DashboardLayout>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Link href="/anime" className="text-red-500 hover:text-red-600 mb-6 inline-block">
-        &larr; Back to Anime
-      </Link>
-      
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="w-full md:w-1/3">
-          <div className="relative aspect-[2/3] overflow-hidden rounded-lg">
-            <Image
-              src={anime.posterUrl || "/placeholder.svg"}
-              alt={anime.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 33vw"
-            />
-          </div>
-        </div>
-        
-        <div className="w-full md:w-2/3">
-          <h1 className="text-3xl font-bold mb-2">{anime.title}</h1>
-          
-          <div className="flex items-center gap-4 mb-4">
-            {anime.rating > 0 && (
-              <div className="flex items-center gap-1">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-medium">{anime.rating.toFixed(1)}</span>
-              </div>
-            )}
-            
-            {anime.year && (
-              <div className="flex items-center gap-1">
-                <Calendar className="h-5 w-5 text-gray-400" />
-                <span>{anime.year}</span>
-              </div>
-            )}
-            
-            {anime.status && (
-              <div className="flex items-center gap-1">
-                <Info className="h-5 w-5 text-gray-400" />
-                <span>{anime.status}</span>
-              </div>
-            )}
-          </div>
-          
-          {anime.genres && anime.genres.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              {anime.genres.map((genre) => (
-                <span 
-                  key={genre} 
-                  className="bg-zinc-800 text-white px-3 py-1 rounded-full text-sm flex items-center gap-1"
-                >
-                  <Tag className="h-3 w-3" />
-                  {genre}
-                </span>
-              ))}
-            </div>
-          )}
-          
-          {anime.summary && (
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-2">Summary</h2>
-              <div 
-                className="prose prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: anime.summary }}
+    <DashboardLayout>
+      <div className="py-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-1">
+            <div className="relative aspect-[2/3] rounded-lg overflow-hidden">
+              <Image
+                src={anime.posterUrl || "/placeholder.svg"}
+                alt={anime.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 33vw"
               />
             </div>
-          )}
+            <div className="mt-4">
+              <WatchStatusDropdown contentId={anime.id} contentType="anime" />
+            </div>
+          </div>
           
-          <div className="flex gap-4">
-            <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md">
-              Add to Watchlist
-            </button>
-            <button className="bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-2 rounded-md">
-              Mark as Watched
-            </button>
+          <div className="md:col-span-2">
+            <h1 className="text-3xl font-bold mb-2">{anime.title}</h1>
+            
+            {/* Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
+                <Star className="h-5 w-5 text-yellow-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Rating</p>
+                  <p className="font-medium">{anime.rating.toFixed(1)}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
+                <Calendar className="h-5 w-5 text-blue-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Year</p>
+                  <p className="font-medium">{anime.year}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
+                <Tv className="h-5 w-5 text-purple-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="font-medium">{anime.status || 'Unknown'}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
+                <Users className="h-5 w-5 text-green-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Type</p>
+                  <p className="font-medium">Anime</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Overview */}
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-2">Overview</h2>
+              {anime.summary ? (
+                <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                  {anime.summary.replace(/<[^>]*>?/gm, '')}
+                </p>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 italic">
+                  No overview available for this anime.
+                </p>
+              )}
+            </div>
+
+            {/* Genres */}
+            {anime.genres && anime.genres.length > 0 && (
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold mb-2">Genres</h2>
+                <div className="flex flex-wrap gap-2">
+                  {anime.genres.map((genre) => (
+                    <span
+                      key={genre}
+                      className="bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-1 rounded-full text-sm"
+                    >
+                      {genre}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Additional Info */}
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-2">Additional Information</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {anime.episodes && (
+                  <div className="flex items-center gap-2">
+                    <Tv className="h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-500">Episodes</p>
+                      <p className="font-medium">{anime.episodes}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {anime.duration && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-500">Duration</p>
+                      <p className="font-medium">{anime.duration} min</p>
+                    </div>
+                  </div>
+                )}
+                
+                {anime.studios && anime.studios.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-500">Studios</p>
+                      <p className="font-medium">{anime.studios.join(', ')}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

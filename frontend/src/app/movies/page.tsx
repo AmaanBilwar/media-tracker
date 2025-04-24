@@ -1,17 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Movie, getPopularMovies, searchMovies as searchMoviesApi } from "@/lib/api"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { WatchStatusDropdown } from "@/components/watch-status-dropdown"
+import { LoadingMessage } from "@/components/loading-message"
 
 export default function MoviesPage() {
   const searchParams = useSearchParams()
   const searchQuery = searchParams.get("search") || ""
+  const router = useRouter()
   const [movies, setMovies] = useState<Movie[]>([])
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -104,6 +106,10 @@ export default function MoviesPage() {
     }
   }
 
+  const handleMovieClick = (movieId: string) => {
+    router.push(`/movies/${movieId}`)
+  }
+
   return (
     <DashboardLayout>
       <div className="py-6">
@@ -113,9 +119,7 @@ export default function MoviesPage() {
         
         {/* Loading state */}
         {isLoading && page === 1 && !searchQuery ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-red-500" />
-          </div>
+          <LoadingMessage pageType="movies" />
         ) : error ? (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
             {error}
@@ -128,7 +132,11 @@ export default function MoviesPage() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
               {filteredMovies.map((movie) => (
-                <div key={movie.id} className="group">
+                <div 
+                  key={movie.id} 
+                  className="group cursor-pointer"
+                  onClick={() => handleMovieClick(movie.id)}
+                >
                   <div className="relative overflow-hidden rounded-lg">
                     <div className="aspect-[2/3] relative overflow-hidden rounded-lg">
                       <Image
@@ -147,7 +155,7 @@ export default function MoviesPage() {
                   <div className="mt-2">
                     <h3 className="font-medium text-sm truncate">{movie.title}</h3>
                     {movie.year && <p className="text-xs text-gray-400">{movie.year}</p>}
-                    <div className="mt-2">
+                    <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                       <WatchStatusDropdown contentId={movie.id} contentType="movie" />
                     </div>
                   </div>

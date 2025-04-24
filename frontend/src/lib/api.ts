@@ -28,17 +28,28 @@ export interface Anime {
   genres?: string[];
   status?: string;
   type: string;
+  episodes?: number;
+  season?: string;
+  season_year?: string;
+  source?: string;
+  studios?: string[];
+  duration?: number;
 }
 
 export interface Movie {
   id: string;
   title: string;
-  posterUrl: string;
+  posterUrl: string | null;
   rating: number;
-  year: string;
-  summary?: string;
-  genres?: string[];
-  type: string;
+  year: number | null;
+  overview: string;
+  genres: string[];
+  cast: {
+    id: string;
+    name: string;
+    character: string;
+    profileUrl: string | null;
+  }[];
 }
 
 export interface PaginatedResponse<T> {
@@ -458,4 +469,30 @@ export async function getShowsByStatus(status: WatchStatus): Promise<Show[]> {
 
 export async function getAnimeByStatus(status: WatchStatus): Promise<Anime[]> {
   return getContentByStatus('anime', status) as Promise<Anime[]>;
-} 
+}
+
+export async function getMovieDetails(movieId: string): Promise<Movie> {
+  const response = await fetch(`/api/movies/${movieId}`)
+  if (!response.ok) {
+    throw new Error('Failed to fetch movie details')
+  }
+  return response.json()
+}
+
+export async function getShowDetails(showId: string): Promise<Show> {
+  const response = await fetch(`/api/shows/${showId}`)
+  if (!response.ok) {
+    throw new Error('Failed to fetch show details')
+  }
+  return response.json()
+}
+
+export async function getAnimeDetails(animeId: string): Promise<Anime> {
+  const response = await fetch(`/api/anime/${animeId}`)
+  if (!response.ok) {
+    throw new Error('Failed to fetch anime details')
+  }
+  return response.json()
+}
+
+export type ContentType = 'movie' | 'show' | 'anime' 

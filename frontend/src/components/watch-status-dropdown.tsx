@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button"
 import { 
   getWatchStatus, 
   updateWatchStatus, 
-  WatchStatus 
+  WatchStatus,
+  ContentType
 } from "@/lib/api"
 import { 
   PlayCircle, 
@@ -20,10 +21,11 @@ import {
   RefreshCw, 
   MoreHorizontal 
 } from "lucide-react"
+import { useSWRConfig } from 'swr'
 
 interface WatchStatusDropdownProps {
   contentId: string
-  contentType: 'movie' | 'show'
+  contentType: ContentType
   className?: string
 }
 
@@ -34,6 +36,7 @@ export function WatchStatusDropdown({
 }: WatchStatusDropdownProps) {
   const [status, setStatus] = useState<WatchStatus>('none')
   const [isLoading, setIsLoading] = useState(false)
+  const { mutate } = useSWRConfig()
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -46,13 +49,27 @@ export function WatchStatusDropdown({
 
   const handleStatusChange = async (newStatus: WatchStatus) => {
     setIsLoading(true)
+    const previousStatus = status
+    
+    // Optimistically update the UI
+    setStatus(newStatus)
+    
     try {
       const success = await updateWatchStatus(contentId, contentType, newStatus)
-      if (success) {
-        setStatus(newStatus)
+      if (!success) {
+        // Revert on failure
+        setStatus(previousStatus)
       }
+      
+      // Trigger revalidation of all related data
+      await Promise.all([
+        mutate('/api/user-content', undefined, { revalidate: true }),
+        mutate((key) => typeof key === 'string' && key.startsWith('/api/user-content'), undefined, { revalidate: true })
+      ])
     } catch (error) {
       console.error('Error updating status:', error)
+      // Revert on error
+      setStatus(previousStatus)
     } finally {
       setIsLoading(false)
     }
