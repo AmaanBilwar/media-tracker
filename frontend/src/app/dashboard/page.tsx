@@ -4,21 +4,27 @@ import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import MovieGrid from "@/components/movie-grid"
 import { MovieSection } from "@/components/movie-section"
-import { getAllContentByStatus, Movie, Show, WatchStatus, ContentByStatus } from "@/lib/api"
+import { getAllContentByStatus, Movie, Show, Anime, WatchStatus, ContentByStatus } from "@/lib/api"
 import { Loader2 } from "lucide-react"
 import useSWR from 'swr'
+import { LoadingMessage } from "@/components/loading-message"
 
 export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
+  const [isMutating, setIsMutating] = useState(false)
   
   // Use SWR for data fetching with caching
-  const { data, error: swrError, isLoading } = useSWR<ContentByStatus>(
+  const { data, error: swrError, isLoading, mutate } = useSWR<ContentByStatus>(
     '/api/user-content',
     getAllContentByStatus,
     {
-      revalidateOnFocus: false, // Don't revalidate when window regains focus
-      revalidateOnReconnect: true, // Revalidate when reconnecting
-      dedupingInterval: 60000, // Dedupe requests within 1 minute
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      dedupingInterval: 0, // Remove deduping to ensure immediate updates
+      refreshInterval: 0,
+      revalidateIfStale: true,
+      onSuccess: () => setIsMutating(false),
+      onError: () => setIsMutating(false)
     }
   )
 
@@ -33,9 +39,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-red-500" />
-        </div>
+        <LoadingMessage pageType="dashboard" />
       </DashboardLayout>
     )
   }
@@ -50,13 +54,19 @@ export default function DashboardPage() {
     )
   }
 
-  const renderContentSection = (title: string, movies: Movie[], shows: Show[]) => {
-    const hasContent = movies.length > 0 || shows.length > 0
+  const renderContentSection = (title: string, movies: Movie[], shows: Show[], anime: Anime[] = []) => {
+    const hasContent = movies.length > 0 || shows.length > 0 || anime.length > 0
     if (!hasContent) return null
 
     return (
       <MovieSection title={title}>
-        <MovieGrid movies={[...movies, ...shows]} />
+        {isMutating ? (
+          <div className="flex justify-center items-center h-32">
+            <Loader2 className="h-6 w-6 animate-spin text-red-500" />
+          </div>
+        ) : (
+          <MovieGrid movies={[...movies, ...shows, ...anime]} />
+        )}
       </MovieSection>
     )
   }
@@ -65,9 +75,7 @@ export default function DashboardPage() {
   if (!data) {
     return (
       <DashboardLayout>
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-red-500" />
-        </div>
+        <LoadingMessage pageType="dashboard" />
       </DashboardLayout>
     )
   }
@@ -77,29 +85,34 @@ export default function DashboardPage() {
       <div className="space-y-10 py-6">
         {renderContentSection("Currently Watching", 
           data.movies.currently_watching, 
-          data.shows.currently_watching
+          data.shows.currently_watching,
+          data.anime.currently_watching
         )}
 
         {renderContentSection("Watch Later", 
           data.movies.watch_later, 
-          data.shows.watch_later
+          data.shows.watch_later,
+          data.anime.watch_later
         )}
 
         {renderContentSection("Watched", 
           data.movies.watched, 
-          data.shows.watched
+          data.shows.watched,
+          data.anime.watched
         )}
 
         {renderContentSection("Want to Rewatch", 
           data.movies.rewatch, 
-          data.shows.rewatch
+          data.shows.rewatch,
+          data.anime.rewatch
         )}
 
         {Object.values(data.movies).every(movies => movies.length === 0) &&
-         Object.values(data.shows).every(shows => shows.length === 0) && (
+         Object.values(data.shows).every(shows => shows.length === 0) &&
+         Object.values(data.anime).every(anime => anime.length === 0) && (
           <div className="text-center py-12">
             <p className="text-lg text-gray-500">No content in your watchlist yet.</p>
-            <p className="text-sm text-gray-400 mt-2">Start adding movies and shows to see them here!</p>
+            <p className="text-sm text-gray-400 mt-2">Start adding movies, shows, and anime to see them here!</p>
           </div>
         )}
       </div>

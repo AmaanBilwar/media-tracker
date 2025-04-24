@@ -6,7 +6,7 @@ export default function Home() {
     <div className="min-h-screen bg-black text-white">
       <Navbar />
       <main className="container mx-auto px-4 py-6">
-        <MovieGrid category="all" />
+        <MovieGrid movies={[]} />
       </main>
     </div>
   )

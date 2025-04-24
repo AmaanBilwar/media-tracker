@@ -1,16 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Show } from "@/lib/api"
 import { Loader2 } from "lucide-react"
 import Image from "next/image"
 import { WatchStatusDropdown } from "@/components/watch-status-dropdown"
+import { LoadingMessage } from "@/components/loading-message"
 
 export default function ShowsPage() {
   const searchParams = useSearchParams()
   const searchQuery = searchParams.get("search") || ""
+  const router = useRouter()
   const [shows, setShows] = useState<Show[]>([])
   const [filteredShows, setFilteredShows] = useState<Show[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -146,6 +148,10 @@ export default function ShowsPage() {
     }
   }
 
+  const handleShowClick = (showId: string) => {
+    router.push(`/shows/${showId}`)
+  }
+
   return (
     <DashboardLayout>
       <div className="py-6">
@@ -155,9 +161,7 @@ export default function ShowsPage() {
         
         {/* Loading state */}
         {isLoading && page === 1 && !searchQuery ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-red-500" />
-          </div>
+          <LoadingMessage pageType="shows" />
         ) : error ? (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
             {error}
@@ -170,7 +174,11 @@ export default function ShowsPage() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
               {filteredShows.map((show) => (
-                <div key={show.id} className="group">
+                <div 
+                  key={show.id} 
+                  className="group cursor-pointer"
+                  onClick={() => handleShowClick(show.id)}
+                >
                   <div className="relative overflow-hidden rounded-lg">
                     <div className="aspect-[2/3] relative overflow-hidden rounded-lg">
                       <Image
@@ -189,7 +197,7 @@ export default function ShowsPage() {
                   <div className="mt-2">
                     <h3 className="font-medium text-sm truncate">{show.title}</h3>
                     {show.year && <p className="text-xs text-gray-400">{show.year}</p>}
-                    <div className="mt-2">
+                    <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                       <WatchStatusDropdown contentId={show.id} contentType="show" />
                     </div>
                   </div>
