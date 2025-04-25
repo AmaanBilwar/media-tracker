@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Card, CardContent } from "@/components/ui/card"
+import Image from "next/image"
 
 function ThemeLogo() {
   const { resolvedTheme } = useTheme()
@@ -30,10 +31,12 @@ function ThemeLogo() {
   }
 
   return (
-    <img
+    <Image
       src={resolvedTheme === 'dark' ? '/logo-white.png' : '/logo.png'}
       alt="Media Tracker Logo"
-      className="h-32 w-[350px] object-contain mb-6"
+      width={350}
+      height={128}
+      className="object-contain mb-6"
     />
   )
 }
@@ -111,7 +114,7 @@ export default function SignInPage() {
                 <CardContent className="p-4 text-center">
                   <p className="text-2xl font-bold text-gray-900 dark:text-white">1 User</p>
                   <p className="text-gray-500 dark:text-gray-400 text-xs">
-                    (it's just me)<br />(for now)
+                    (it&apos;s just me)<br />(for now)
                   </p>
                 </CardContent>
               </Card>

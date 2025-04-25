@@ -7,6 +7,12 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     unoptimized: true,
   },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  experimental: {
+    typedRoutes: true,
+  },
 }
 
 module.exports = nextConfig 

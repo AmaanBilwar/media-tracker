@@ -53,7 +53,7 @@ export default function VerifyEmailPage() {
         <div className="space-y-2 text-center mb-6">
           <h2 className="text-2xl font-bold">Verify Your Email</h2>
           <p className="text-gray-500">
-            We've sent a verification code to your email address.
+            We&apos;ve sent a verification code to your email address.
             Please enter it below to complete your registration.
           </p>
         </div>
@@ -87,7 +87,7 @@ export default function VerifyEmailPage() {
         
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-500">
-            Didn't receive a code?{" "}
+            Didn&apos;t receive a code?{" "}
             <button
               type="button"
               className="text-blue-600 hover:text-blue-800 font-medium"

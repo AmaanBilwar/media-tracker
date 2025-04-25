@@ -92,7 +92,7 @@ export default function MoviesPage() {
     }
     
     performSearch()
-  }, [searchQuery, searchPage])
+  }, [searchQuery, searchPage, movies])
 
   const loadMore = () => {
     if (searchQuery.trim()) {

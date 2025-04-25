@@ -134,7 +134,7 @@ export default function ShowsPage() {
     }
     
     searchShows()
-  }, [searchQuery, searchPage])
+  }, [searchQuery, searchPage, shows])
 
   const loadMore = () => {
     if (searchQuery.trim()) {

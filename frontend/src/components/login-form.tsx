@@ -114,7 +114,7 @@ export default function LoginForm() {
       
       {showSignUpPrompt && (
         <div className="mb-4 p-3 bg-blue-100 text-zinc-300 rounded-md text-sm">
-          Don't have an account yet?{" "}
+          Don&apos;t have an account yet?{" "}
           <button
             type="button"
             className="font-medium underline"
@@ -176,7 +176,7 @@ export default function LoginForm() {
 
       <div className="mt-4 text-center">
         <p className="text-sm text-gray-500">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <button
             type="button"
             className="text-zinc-800 hover:text-zinc-600 hover:cursor-pointer font-medium"

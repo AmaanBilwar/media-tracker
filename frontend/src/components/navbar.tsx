@@ -17,11 +17,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+type NavItem = {
+  name: string
+  path: `/${string}`
+}
+
 export default function Navbar() {
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { name: "Movies", path: "/" },
     { name: "Shows", path: "/shows" },
     { name: "Anime", path: "/anime" },
@@ -32,9 +37,11 @@ export default function Navbar() {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center">
-            <img
+            <Image
               src={resolvedTheme === 'dark' ? '/logo-white.png' : '/logo.png'}
               alt="Media Tracker Logo"
+              width={40}
+              height={40}
               className="h-10"
             />
           </Link>

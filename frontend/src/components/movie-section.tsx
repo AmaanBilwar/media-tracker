@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react"
 interface MovieSectionProps {
   title: string
   children: React.ReactNode
-  seeAllLink?: string
+  seeAllLink?: `/${string}`
 }
 
 export function MovieSection({ title, children, seeAllLink = "/movies" }: MovieSectionProps) {

@@ -10,6 +10,7 @@ import { UserButton, SignOutButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useTheme } from "next-themes"
+import Image from "next/image"
 
 function ThemeLogo() {
   const { resolvedTheme } = useTheme()
@@ -26,10 +27,12 @@ function ThemeLogo() {
   }
 
   return (
-    <img
+    <Image
       src={resolvedTheme === 'dark' ? '/logo-white.png' : '/logo.png'}
       alt="Media Tracker Logo"
-      className="h-32 w-[280px] object-contain"
+      width={280}
+      height={128}
+      className="object-contain"
     />
   )
 }

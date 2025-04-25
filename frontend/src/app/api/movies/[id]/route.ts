@@ -3,12 +3,12 @@ import { TMDB_API_KEY, TMDB_BASE_URL } from '@/lib/constants'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const movieId = params.id
+    const { id } = await params
     const response = await fetch(
-      `${TMDB_BASE_URL}/movie/${movieId}?api_key=${TMDB_API_KEY}&append_to_response=credits`,
+      `${TMDB_BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits`,
       {
         headers: {
           'Content-Type': 'application/json',
