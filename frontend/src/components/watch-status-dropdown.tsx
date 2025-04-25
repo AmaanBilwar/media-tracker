@@ -19,9 +19,11 @@ import {
   Clock, 
   CheckCircle, 
   RefreshCw, 
-  MoreHorizontal 
+  MoreHorizontal,
+  Loader2
 } from "lucide-react"
 import { useSWRConfig } from 'swr'
+import { useToast } from "@/components/ui/use-toast"
 
 interface WatchStatusDropdownProps {
   contentId: string
@@ -37,15 +39,28 @@ export function WatchStatusDropdown({
   const [status, setStatus] = useState<WatchStatus>('none')
   const [isLoading, setIsLoading] = useState(false)
   const { mutate } = useSWRConfig()
+  const { toast } = useToast()
 
   useEffect(() => {
     const fetchStatus = async () => {
-      const response = await getWatchStatus(contentId, contentType)
-      setStatus(response.status)
+      try {
+        setIsLoading(true)
+        const response = await getWatchStatus(contentId, contentType)
+        setStatus(response.status)
+      } catch (error) {
+        console.error('Error fetching status:', error)
+        toast({
+          title: "Error",
+          description: "Failed to load watch status",
+          variant: "destructive"
+        })
+      } finally {
+        setIsLoading(false)
+      }
     }
     
     fetchStatus()
-  }, [contentId, contentType])
+  }, [contentId, contentType, toast])
 
   const handleStatusChange = async (newStatus: WatchStatus) => {
     setIsLoading(true)
@@ -59,23 +74,37 @@ export function WatchStatusDropdown({
       if (!success) {
         // Revert on failure
         setStatus(previousStatus)
+        toast({
+          title: "Error",
+          description: "Failed to update watch status",
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Success",
+          description: "Watch status updated successfully"
+        })
+        // Only revalidate the specific content's status
+        mutate(`/api/user-content/${contentType}/${contentId}`)
       }
-      
-      // Trigger revalidation of all related data
-      await Promise.all([
-        mutate('/api/user-content', undefined, { revalidate: true }),
-        mutate((key) => typeof key === 'string' && key.startsWith('/api/user-content'), undefined, { revalidate: true })
-      ])
     } catch (error) {
       console.error('Error updating status:', error)
       // Revert on error
       setStatus(previousStatus)
+      toast({
+        title: "Error",
+        description: "Failed to update watch status",
+        variant: "destructive"
+      })
     } finally {
       setIsLoading(false)
     }
   }
 
   const getStatusIcon = (status: WatchStatus) => {
+    if (isLoading) {
+      return <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+    }
     switch (status) {
       case 'currently_watching':
         return <PlayCircle className="h-4 w-4 mr-2" />
@@ -91,6 +120,9 @@ export function WatchStatusDropdown({
   }
 
   const getStatusLabel = (status: WatchStatus) => {
+    if (isLoading) {
+      return "Updating..."
+    }
     switch (status) {
       case 'currently_watching':
         return 'Currently Watching'
@@ -118,13 +150,14 @@ export function WatchStatusDropdown({
           {getStatusLabel(status)}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
+      <DropdownMenuContent
         align="end"
         className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md"
       >
         <DropdownMenuItem 
           onClick={() => handleStatusChange('currently_watching')}
           className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-white"
+          disabled={isLoading}
         >
           <PlayCircle className="h-4 w-4 mr-2" />
           Currently Watching
@@ -132,6 +165,7 @@ export function WatchStatusDropdown({
         <DropdownMenuItem 
           onClick={() => handleStatusChange('watch_later')}
           className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-white"
+          disabled={isLoading}
         >
           <Clock className="h-4 w-4 mr-2" />
           Watch Later
@@ -139,6 +173,7 @@ export function WatchStatusDropdown({
         <DropdownMenuItem 
           onClick={() => handleStatusChange('watched')}
           className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-white"
+          disabled={isLoading}
         >
           <CheckCircle className="h-4 w-4 mr-2" />
           Watched
@@ -146,6 +181,7 @@ export function WatchStatusDropdown({
         <DropdownMenuItem 
           onClick={() => handleStatusChange('rewatch')}
           className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-white"
+          disabled={isLoading}
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Rewatch
@@ -153,6 +189,7 @@ export function WatchStatusDropdown({
         <DropdownMenuItem 
           onClick={() => handleStatusChange('none')}
           className="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer dark:text-white"
+          disabled={isLoading}
         >
           <MoreHorizontal className="h-4 w-4 mr-2" />
           Clear Status
