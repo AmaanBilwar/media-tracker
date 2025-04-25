@@ -19,6 +19,13 @@ client = MongoClient(MONGO_URI)
 db = client.movietracker
 watch_status_collection = db.watch_status
 
+# Create indexes for watch status collection
+watch_status_collection.create_index([
+    ("userId", 1),
+    ("contentId", 1),
+    ("contentType", 1)
+], unique=True)
+
 # TMDB API configuration
 TMDB_API_KEY = os.getenv('TMDB_API_KEY')
 TMDB_BASE_URL = 'https://api.themoviedb.org/3'
@@ -210,8 +217,6 @@ def user_watch_status(user_id, content_type, content_id):
             })
             
             if status:
-                # Convert ObjectId to string for JSON serialization
-                status['_id'] = str(status['_id'])
                 return jsonify({"status": status.get("status", "none")})
             else:
                 return jsonify({"status": "none"})
@@ -231,42 +236,30 @@ def user_watch_status(user_id, content_type, content_id):
             if status not in ['currently_watching', 'watch_later', 'watched', 'rewatch', 'none']:
                 return jsonify({"error": "Invalid status value"}), 400
             
-            # Check if status already exists
-            existing = watch_status_collection.find_one({
-                "userId": user_id,
-                "contentId": content_id,
-                "contentType": content_type
-            })
-            
-            if existing:
-                # Update existing status
-                if status == 'none':
-                    # Remove the status if 'none' is selected
-                    watch_status_collection.delete_one({
+            if status == 'none':
+                # Remove the status if 'none' is selected
+                result = watch_status_collection.delete_one({
+                    "userId": user_id,
+                    "contentId": content_id,
+                    "contentType": content_type
+                })
+                if result.deleted_count > 0:
+                    return jsonify({"message": "Status removed successfully"})
+                return jsonify({"message": "No status to remove"})
+            else:
+                # Use upsert to either update existing or insert new status in one operation
+                result = watch_status_collection.update_one(
+                    {
                         "userId": user_id,
                         "contentId": content_id,
                         "contentType": content_type
-                    })
-                    return jsonify({"message": "Status removed successfully"})
-                else:
-                    # Update the status
-                    watch_status_collection.update_one(
-                        {"userId": user_id, "contentId": content_id, "contentType": content_type},
-                        {"$set": {"status": status}}
-                    )
-                    return jsonify({"message": "Status updated successfully"})
-            else:
-                # Create new status
-                if status != 'none':
-                    watch_status_collection.insert_one({
-                        "userId": user_id,
-                        "contentId": content_id,
-                        "contentType": content_type,
-                        "status": status
-                    })
-                    return jsonify({"message": "Status created successfully"})
-                else:
-                    return jsonify({"message": "No action needed"})
+                    },
+                    {
+                        "$set": {"status": status}
+                    },
+                    upsert=True
+                )
+                return jsonify({"message": "Status updated successfully"})
         except Exception as e:
             print(f"Error updating watch status: {str(e)}")
             return jsonify({"error": f"Error updating watch status: {str(e)}"}), 500
