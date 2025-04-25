@@ -631,8 +631,9 @@ def get_anime_details(anime_id):
         return jsonify({"error": f"Error fetching data from MyAnimeList API: {str(e)}"}), 500
 
 if __name__ == '__main__':
+    port = int(os.getenv('PORT', 5000))
     app.run(
-        host=os.getenv('HOST', '0.0.0.0'),
-        port=int(os.getenv('PORT', 5000)),
-        debug=True
+        host='0.0.0.0',
+        port=port,
+        debug=False  # Set to False in production
     )
