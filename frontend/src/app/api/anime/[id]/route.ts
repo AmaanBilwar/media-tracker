@@ -1,28 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPopularAnime } from '@/lib/api'
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params; // Await the params Promise
-    const animeList = await getPopularAnime();
-    const anime = animeList.find(a => a.id === id);
-
-    if (!anime) {
-      return NextResponse.json(
-        { error: 'Anime not found' },
-        { status: 404 }
-      );
+    const { id } = params
+    const response = await fetch(`${API_BASE_URL}/api/anime/${id}`)
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`)
     }
-
-    return NextResponse.json(anime);
+    
+    const anime = await response.json()
+    return NextResponse.json(anime)
   } catch (error) {
-    console.error('Error fetching anime details:', error);
+    console.error('Error fetching anime details:', error)
     return NextResponse.json(
       { error: 'Failed to fetch anime details' },
       { status: 500 }
-    );
+    )
   }
 }

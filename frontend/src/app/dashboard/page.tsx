@@ -8,10 +8,13 @@ import { getAllContentByStatus, Movie, Show, Anime, WatchStatus, ContentByStatus
 import { Loader2 } from "lucide-react"
 import useSWR from 'swr'
 import { LoadingMessage } from "@/components/loading-message"
+import { useSearchParams } from 'next/navigation'
 
 export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [isMutating, setIsMutating] = useState(false)
+  const searchParams = useSearchParams()
+  const searchQuery = searchParams.get('search') || ''
   
   // Use SWR for data fetching with caching
   const { data, error: swrError, isLoading, mutate } = useSWR<ContentByStatus>(
@@ -54,8 +57,20 @@ export default function DashboardPage() {
     )
   }
 
+  // Filter content based on search query if present
+  const filterContent = (content: (Movie | Show | Anime)[]) => {
+    if (!searchQuery) return content
+    return content.filter(item => 
+      item.title.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  }
+
   const renderContentSection = (title: string, movies: Movie[], shows: Show[], anime: Anime[] = []) => {
-    const hasContent = movies.length > 0 || shows.length > 0 || anime.length > 0
+    const filteredMovies = filterContent(movies)
+    const filteredShows = filterContent(shows)
+    const filteredAnime = filterContent(anime)
+    
+    const hasContent = filteredMovies.length > 0 || filteredShows.length > 0 || filteredAnime.length > 0
     if (!hasContent) return null
 
     return (
@@ -65,7 +80,7 @@ export default function DashboardPage() {
             <Loader2 className="h-6 w-6 animate-spin text-red-500" />
           </div>
         ) : (
-          <ContentGrid content={[...movies, ...shows, ...anime]} />
+          <ContentGrid content={[...filteredMovies, ...filteredShows, ...filteredAnime]} />
         )}
       </MovieSection>
     )
@@ -81,7 +96,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout data={data}>
       <div className="space-y-10 py-6">
         {renderContentSection("Currently Watching", 
           data.movies.currently_watching, 

@@ -66,7 +66,12 @@ export default function MovieDetailsPage() {
               />
             </div>
             <div className="mt-4">
-              <WatchStatusDropdown contentId={movie.id} contentType="movie" />
+              <WatchStatusDropdown 
+                contentId={movie.id} 
+                contentType="movie"
+                totalSeasons={1}
+                totalEpisodes={1}
+              />
             </div>
           </div>
           

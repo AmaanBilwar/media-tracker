@@ -4,13 +4,14 @@ import type React from "react"
 import Link from "next/link"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { UserButton, SignOutButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useTheme } from "next-themes"
 import Image from "next/image"
+import { ContentByStatus } from "@/lib/api"
 
 function ThemeLogo() {
   const { resolvedTheme } = useTheme()
@@ -37,31 +38,91 @@ function ThemeLogo() {
   )
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ 
+  children,
+  data
+}: { 
+  children: React.ReactNode
+  data?: ContentByStatus
+}) {
   const [searchQuery, setSearchQuery] = useState("")
   const router = useRouter()
   const pathname = usePathname()
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!searchQuery.trim()) return
-    
-    // Determine which page we're on
+  // Debounced search function
+  const debouncedSearch = useCallback((query: string) => {
     const isShowsPage = pathname.includes('/shows')
     const isMoviesPage = pathname.includes('/movies')
     const isAnimePage = pathname.includes('/anime')
+    const isDashboardPage = pathname === '/dashboard'
     
-    // Navigate to the appropriate page with search query
-    if (isShowsPage) {
-      router.push(`/shows?search=${encodeURIComponent(searchQuery)}`)
-    } else if (isMoviesPage) {
-      router.push(`/movies?search=${encodeURIComponent(searchQuery)}`)
-    } else if (isAnimePage) {
-      router.push(`/anime?search=${encodeURIComponent(searchQuery)}`)
-    } else {
-      // Default to shows if on any other page
-      router.push(`/shows?search=${encodeURIComponent(searchQuery)}`)
+    // If on dashboard, filter the existing content
+    if (isDashboardPage && data) {
+      // Update the URL with search params without navigation
+      const searchParams = new URLSearchParams(window.location.search)
+      if (query) {
+        searchParams.set('search', query)
+      } else {
+        searchParams.delete('search')
+      }
+      const newUrl = `${window.location.pathname}?${searchParams.toString()}`
+      window.history.pushState({}, '', newUrl)
+      return
     }
+    
+    // For specific content pages, use the existing search behavior
+    if (query) {
+      if (isShowsPage) {
+        router.push(`/shows?search=${encodeURIComponent(query)}`)
+      } else if (isMoviesPage) {
+        router.push(`/movies?search=${encodeURIComponent(query)}`)
+      } else if (isAnimePage) {
+        router.push(`/anime?search=${encodeURIComponent(query)}`)
+      }
+    } else {
+      // If search is cleared, remove search param
+      if (isShowsPage) {
+        router.push('/shows')
+      } else if (isMoviesPage) {
+        router.push('/movies')
+      } else if (isAnimePage) {
+        router.push('/anime')
+      }
+    }
+  }, [pathname, data, router])
+
+  // Handle input change with debouncing
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearchQuery(value)
+    
+    // Clear any existing timeout
+    if (window.searchTimeout) {
+      clearTimeout(window.searchTimeout)
+    }
+    
+    // Set new timeout for debounced search
+    window.searchTimeout = setTimeout(() => {
+      debouncedSearch(value)
+    }, 300) // 300ms delay
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (window.searchTimeout) {
+        clearTimeout(window.searchTimeout)
+      }
+    }
+  }, [])
+
+  // Handle form submission (for accessibility and mobile devices)
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (window.searchTimeout) {
+      clearTimeout(window.searchTimeout)
+    }
+    debouncedSearch(searchQuery)
   }
 
   return (
@@ -76,9 +137,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
               type="search"
-              placeholder={pathname.includes('/shows') ? "Search shows by title..." : pathname.includes('/movies') ? "Search movies by title..." : "Search anime by title..."}
+              placeholder={pathname.includes('/shows') ? "Search shows by title..." : pathname.includes('/movies') ? "Search movies by title..." : pathname.includes('/anime') ? "Search anime by title..." : "Search your dashboard by title..."}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleInputChange}
               className="pl-10 h-10 rounded-full w-full"
             />
           </form>
@@ -95,6 +156,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
             <Link href="/anime" className="hover:cursor-pointer font-medium hover:text-primary">
               Anime
+            </Link>
+            <Link href="/subscriptions" className="hover:cursor-pointer font-medium hover:text-primary">
+              Subscriptions
+            </Link>
+            <Link href="/supporters" className="hover:cursor-pointer font-medium hover:text-primary">
+              Supporters
             </Link>
             <div className="flex items-center gap-2">
               <ThemeSwitcher />
@@ -114,4 +181,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <footer className="py-4 text-center text-sm text-muted-foreground mt-12">Built by Amaan :)</footer>
     </div>
   )
+}
+
+// Add TypeScript declaration for the window object
+declare global {
+  interface Window {
+    searchTimeout?: NodeJS.Timeout;
+  }
 }

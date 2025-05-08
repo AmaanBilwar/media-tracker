@@ -66,6 +66,25 @@ def search():
                 "type": "show"
             })
         
+        # In /api/search, after formatting each show, fetch and attach seasons from TMDB
+        for show in formatted_shows:
+            if show['type'] == 'show' and show['id']:
+                try:
+                    tmdb_show_url = f"{TMDB_BASE_URL}/tv/{show['id']}?api_key={TMDB_API_KEY}&language=en-US"
+                    show_response = requests.get(tmdb_show_url)
+                    show_response.raise_for_status()
+                    show_data = show_response.json()
+                    seasons = []
+                    for season in show_data.get('seasons', []):
+                        seasons.append({
+                            'seasonNumber': season.get('season_number', 1),
+                            'episodeCount': season.get('episode_count', 0),
+                            'name': season.get('name', f"Season {season.get('season_number', 1)}")
+                        })
+                    show['seasons'] = seasons
+                except Exception as e:
+                    print(f"Error fetching seasons for show {show['id']}: {e}")
+        
         return jsonify({"results": formatted_shows})
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Error fetching data from TVmaze API: {str(e)}"}), 500
@@ -90,7 +109,22 @@ def get_show(show_id):
             "status": show_data.get('status', ''),
             "type": "show"
         }
-        
+        # Fetch seasons from TMDB
+        try:
+            tmdb_show_url = f"{TMDB_BASE_URL}/tv/{show_id}?api_key={TMDB_API_KEY}&language=en-US"
+            show_response = requests.get(tmdb_show_url)
+            show_response.raise_for_status()
+            show_data_tmdb = show_response.json()
+            seasons = []
+            for season in show_data_tmdb.get('seasons', []):
+                seasons.append({
+                    'seasonNumber': season.get('season_number', 1),
+                    'episodeCount': season.get('episode_count', 0),
+                    'name': season.get('name', f"Season {season.get('season_number', 1)}")
+                })
+            formatted_show['seasons'] = seasons
+        except Exception as e:
+            print(f"Error fetching seasons for show {show_id}: {e}")
         return jsonify(formatted_show)
     except requests.exceptions.RequestException as e:
         return jsonify({"error": f"Error fetching data from TVmaze API: {str(e)}"}), 500
@@ -217,7 +251,11 @@ def user_watch_status(user_id, content_type, content_id):
             })
             
             if status:
-                return jsonify({"status": status.get("status", "none")})
+                return jsonify({
+                    "status": status.get("status", "none"),
+                    "lastSeason": status.get("lastSeason"),
+                    "lastEpisode": status.get("lastEpisode")
+                })
             else:
                 return jsonify({"status": "none"})
         except Exception as e:
@@ -229,6 +267,8 @@ def user_watch_status(user_id, content_type, content_id):
         try:
             data = request.json
             status = data.get('status')  # 'currently_watching', 'watch_later', 'watched', 'rewatch', 'none'
+            last_season = data.get('lastSeason')
+            last_episode = data.get('lastEpisode')
             
             if not status:
                 return jsonify({"error": "Status is required"}), 400
@@ -248,6 +288,12 @@ def user_watch_status(user_id, content_type, content_id):
                 return jsonify({"message": "No status to remove"})
             else:
                 # Use upsert to either update existing or insert new status in one operation
+                update_data = {"status": status}
+                if last_season is not None:
+                    update_data["lastSeason"] = last_season
+                if last_episode is not None:
+                    update_data["lastEpisode"] = last_episode
+                
                 result = watch_status_collection.update_one(
                     {
                         "userId": user_id,
@@ -255,7 +301,7 @@ def user_watch_status(user_id, content_type, content_id):
                         "contentType": content_type
                     },
                     {
-                        "$set": {"status": status}
+                        "$set": update_data
                     },
                     upsert=True
                 )
@@ -471,7 +517,7 @@ def get_all_content(user_id):
                             headers = {'X-MAL-CLIENT-ID': MAL_CLIENT_ID}
                             anime_response = requests.get(
                                 f"{MAL_BASE_URL}/anime/{content_id}",
-                                params={'fields': 'id,title,main_picture,mean,start_date,synopsis,genres'},
+                                params={'fields': 'id,title,main_picture,mean,start_date,synopsis,genres,num_episodes'},
                                 headers=headers
                             )
                             anime_response.raise_for_status()
@@ -485,12 +531,28 @@ def get_all_content(user_id):
                                 "year": anime_data.get('start_date', '')[:4] if anime_data.get('start_date') else '',
                                 "summary": anime_data.get('synopsis', ''),
                                 "genres": [genre['name'] for genre in anime_data.get('genres', [])],
-                                "type": "anime"
+                                "type": "anime",
+                                "episodes": anime_data.get('num_episodes', 0)
                             }
                             print(f"Successfully fetched anime: {anime_content['title']}")
                             content_list.append(anime_content)
                         else:
+                            # Always fetch show details from TMDB for shows to get seasons
                             content = get_tmdb_content(content_id, content_type)
+                            if content_type == 'show':
+                                # Fetch seasons for the show
+                                tmdb_show_url = f"{TMDB_BASE_URL}/tv/{content_id}?api_key={TMDB_API_KEY}&language=en-US"
+                                show_response = requests.get(tmdb_show_url)
+                                show_response.raise_for_status()
+                                show_data = show_response.json()
+                                seasons = []
+                                for season in show_data.get('seasons', []):
+                                    seasons.append({
+                                        'seasonNumber': season.get('season_number', 1),
+                                        'episodeCount': season.get('episode_count', 0),
+                                        'name': season.get('name', f"Season {season.get('season_number', 1)}")
+                                    })
+                                content['seasons'] = seasons
                             if content:
                                 content_list.append(content)
                     except requests.exceptions.RequestException as e:
@@ -523,7 +585,7 @@ def get_popular_anime():
         }
         response = requests.get(
             f"{MAL_BASE_URL}/anime/ranking",
-            params={'ranking_type': 'all', 'limit': 24},
+            params={'ranking_type': 'all', 'limit': 24, 'fields': 'id,title,main_picture,mean,start_date,synopsis,genres,num_episodes'},
             headers=headers
         )
         response.raise_for_status()
@@ -542,7 +604,8 @@ def get_popular_anime():
                 "summary": anime_data.get('synopsis', ''),
                 "genres": [genre.get('name', '') for genre in anime_data.get('genres', [])],
                 "status": anime_data.get('status', ''),
-                "type": "anime"
+                "type": "anime",
+                "episodes": anime_data.get('num_episodes', 0)
             })
         
         return jsonify({"results": formatted_anime})
@@ -561,7 +624,7 @@ def search_anime():
         }
         response = requests.get(
             f"{MAL_BASE_URL}/anime",
-            params={'q': query, 'limit': 24},
+            params={'q': query, 'limit': 24, 'fields': 'id,title,main_picture,mean,start_date,synopsis,genres,num_episodes'},
             headers=headers
         )
         response.raise_for_status()
@@ -580,7 +643,8 @@ def search_anime():
                 "summary": anime_data.get('synopsis', ''),
                 "genres": [genre.get('name', '') for genre in anime_data.get('genres', [])],
                 "status": anime_data.get('status', ''),
-                "type": "anime"
+                "type": "anime",
+                "episodes": anime_data.get('num_episodes', 0)
             })
         
         return jsonify({"results": formatted_anime})

@@ -9,13 +9,19 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 export interface Show {
   id: string;
   title: string;
-  posterUrl: string;
+  posterUrl: string | null;
   rating: number;
-  year: string;
-  summary?: string;
-  genres?: string[];
-  status?: string;
+  year: string | null;
+  summary: string;
+  genres: string[];
+  status: string;
   type: string;
+  numberOfSeasons: number;
+  seasons: {
+    seasonNumber: number;
+    episodeCount: number;
+    name: string;
+  }[];
 }
 
 export interface Anime {
@@ -295,10 +301,8 @@ export const updateWatchStatus = async (
     }
     
     const body: any = { status };
-    if (contentType === 'show') {
-      if (lastSeason !== undefined) body.lastSeason = lastSeason;
-      if (lastEpisode !== undefined) body.lastEpisode = lastEpisode;
-    }
+    if (lastSeason !== undefined) body.lastSeason = lastSeason;
+    if (lastEpisode !== undefined) body.lastEpisode = lastEpisode;
     
     const response = await fetch(`${API_BASE_URL}/users/${userId}/watch-status/${contentType}/${contentId}`, {
       method: 'PUT',
