@@ -22,6 +22,26 @@ export async function GET(
 
     const data = await response.json()
 
+    // Get seasons data
+    const seasonsData = await Promise.all(
+      data.seasons.map(async (season: any) => {
+        const seasonResponse = await fetch(
+          `${TMDB_BASE_URL}/tv/${id}/season/${season.season_number}?api_key=${TMDB_API_KEY}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+        const seasonData = await seasonResponse.json()
+        return {
+          seasonNumber: season.season_number,
+          episodeCount: seasonData.episodes?.length || 0,
+          name: season.name
+        }
+      })
+    )
+
     // Transform TMDB data to match our Show interface
     const show = {
       id: String(data.id),
@@ -32,7 +52,9 @@ export async function GET(
       summary: data.overview,
       genres: data.genres.map((genre: any) => genre.name),
       status: data.status,
-      type: "show"
+      type: "show",
+      numberOfSeasons: data.number_of_seasons,
+      seasons: seasonsData
     }
 
     return NextResponse.json(show)

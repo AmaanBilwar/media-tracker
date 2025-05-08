@@ -66,7 +66,13 @@ export default function ShowDetailsPage() {
               />
             </div>
             <div className="mt-4">
-              <WatchStatusDropdown contentId={show.id} contentType="show" />
+              <WatchStatusDropdown 
+                contentId={show.id} 
+                contentType="show"
+                totalSeasons={show.seasons.length}
+                totalEpisodes={show.seasons.reduce((total, season) => total + season.episodeCount, 0)}
+                seasons={show.seasons}
+              />
             </div>
           </div>
           
@@ -82,6 +88,22 @@ export default function ShowDetailsPage() {
               <h2 className="text-xl font-semibold mb-2">Overview</h2>
               <p className="text-gray-700">{show.summary}</p>
             </div>
+
+            {show.numberOfSeasons > 0 && (
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold mb-2">Seasons</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {show.seasons.map((season) => (
+                    <div key={season.seasonNumber} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                      <h3 className="font-medium mb-1">{season.name}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {season.episodeCount} {season.episodeCount === 1 ? 'episode' : 'episodes'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {show.genres && show.genres.length > 0 && (
               <div className="mb-6">

@@ -42,7 +42,6 @@ const loadingMessages: Record<PageType, string[]> = {
     "Riding on Haku's back—fetching your info.",
   ],
   dashboard: [
-    "Sorting your backlog like Marie Kondo sorts clutter…",
     "Bringing order to your chaos of unfinished episodes…",
     "Your multiverse of media is syncing…",
     "Brushing the dust off your 'Watch Later' list.",

@@ -61,9 +61,9 @@ export default function MovieCard({ id, title, posterUrl, rating, year, type = "
           </div>
         )}
       </div>
-      <div className="mt-2">
-        <h3 className="font-medium text-sm truncate">{title}</h3>
-        {year && <p className="text-xs text-gray-400">{year}</p>}
+      <div className="mt-2 w-full max-w-[170px]">
+        <h3 className="font-medium text-sm truncate max-w-[160px]" title={title}>{title}</h3>
+        {year && <p className="text-xs text-gray-400 truncate max-w-[160px]">{year}</p>}
         {watchInfo && (
           <p className="text-xs text-gray-400">
             S{watchInfo.lastSeason}E{watchInfo.lastEpisode}

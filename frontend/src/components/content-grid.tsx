@@ -30,8 +30,22 @@ export default function ContentGrid({ content, limit }: ContentGridProps) {
         const contentType = 'type' in item ? item.type as ContentType : 'movie'
         const year = 'year' in item ? String(item.year) : ''
         
+        // Get total seasons and episodes based on content type
+        let totalSeasons = 1
+        let totalEpisodes = 1
+        
+        if (contentType === 'show' && 'seasons' in item) {
+          const show = item as Show
+          totalSeasons = show.seasons.length
+          totalEpisodes = show.seasons.reduce((total, season) => total + season.episodeCount, 0)
+        } else if (contentType === 'anime' && 'episodes' in item) {
+          const anime = item as Anime
+          totalSeasons = 1
+          totalEpisodes = anime.episodes || 1
+        }
+        
         return (
-          <div key={item.id} className="group">
+          <div key={item.id} className="group w-full max-w-[180px]">
             <MovieCard
               id={item.id}
               title={item.title}
@@ -44,6 +58,9 @@ export default function ContentGrid({ content, limit }: ContentGridProps) {
               <WatchStatusDropdown 
                 contentId={item.id} 
                 contentType={contentType}
+                totalSeasons={totalSeasons}
+                totalEpisodes={totalEpisodes}
+                seasons={contentType === 'show' && 'seasons' in item ? (item as Show).seasons : undefined}
               />
             </div>
           </div>

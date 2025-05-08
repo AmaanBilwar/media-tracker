@@ -66,7 +66,12 @@ export default function AnimeDetailsPage() {
               />
             </div>
             <div className="mt-4">
-              <WatchStatusDropdown contentId={anime.id} contentType="anime" />
+              <WatchStatusDropdown 
+                contentId={anime.id} 
+                contentType="anime"
+                totalSeasons={1}
+                totalEpisodes={anime.episodes || 1}
+              />
             </div>
           </div>
           
@@ -106,6 +111,16 @@ export default function AnimeDetailsPage() {
                   <p className="font-medium">Anime</p>
                 </div>
               </div>
+
+              {anime.episodes && (
+                <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
+                  <Tv className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">Episodes</p>
+                    <p className="font-medium">{anime.episodes} {anime.episodes === 1 ? 'episode' : 'episodes'}</p>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Overview */}
