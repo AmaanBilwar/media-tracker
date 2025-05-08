@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import ContentGrid from "@/components/content-grid"
 import { MovieSection } from "@/components/movie-section"
@@ -10,7 +10,7 @@ import useSWR from 'swr'
 import { LoadingMessage } from "@/components/loading-message"
 import { useSearchParams } from 'next/navigation'
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [error, setError] = useState<string | null>(null)
   const [isMutating, setIsMutating] = useState(false)
   const searchParams = useSearchParams()
@@ -132,5 +132,13 @@ export default function DashboardPage() {
         )}
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<LoadingMessage pageType="dashboard" />}>
+      <DashboardContent />
+    </Suspense>
   )
 }
