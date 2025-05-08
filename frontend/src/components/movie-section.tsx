@@ -13,9 +13,7 @@ export function MovieSection({ title, children, seeAllLink = "/movies" }: MovieS
     <section>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">{title}</h2>
-        <Link href={seeAllLink} className="text-sm text-gray-500 hover:text-cyan-500 flex items-center">
-          See all <ChevronRight className="h-4 w-4 ml-1" />
-        </Link>
+        
       </div>
       {children}
     </section>

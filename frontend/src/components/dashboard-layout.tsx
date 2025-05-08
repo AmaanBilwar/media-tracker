@@ -157,6 +157,12 @@ export default function DashboardLayout({
             <Link href="/anime" className="hover:cursor-pointer font-medium hover:text-primary">
               Anime
             </Link>
+            <Link href="/subscriptions" className="hover:cursor-pointer font-medium hover:text-primary">
+              Subscriptions
+            </Link>
+            <Link href="/supporters" className="hover:cursor-pointer font-medium hover:text-primary">
+              Supporters
+            </Link>
             <div className="flex items-center gap-2">
               <ThemeSwitcher />
               <SignOutButton>
