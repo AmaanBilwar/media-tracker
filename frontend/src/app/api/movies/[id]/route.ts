@@ -1,12 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { TMDB_API_KEY, TMDB_BASE_URL } from '@/lib/constants'
 
+type RouteContext = {
+  params: {
+    id: string
+  }
+}
+
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
-    const { id } = await params
+    const { id } = context.params
     const response = await fetch(
       `${TMDB_BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits`,
       {
